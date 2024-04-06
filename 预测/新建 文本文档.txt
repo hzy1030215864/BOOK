@@ -1,0 +1,65 @@
+loadData() {
+  this.loading = true;
+  this.filter.taskNodes = this.taskCodes;
+
+  this.$http.post('schedule:/api/project/ListReceivedProject', {
+    data: { filter: this.filter }
+  }).then(res => {
+    // 处理后端返回的数据
+    res.data.forEach(project => {
+      project.checked = false;
+
+      // 添加默认的 TS014 任务
+      if (!project.PlanNodes.TS014) {
+        project.PlanNodes.TS014 = {
+          TaskCode: 'TS014',
+          TaskName: '新任务',
+          StartDate: null,
+          EndDate: '默认值'
+        };
+if (project.PlanNodes.TS013 && project.PlanNodes.TS013.EndDate) {
+          const ts013EndDate = new Date(project.PlanNodes.TS013.EndDate);
+          ts013EndDate.setDate(ts013EndDate.getDate() + 1);
+          project.PlanNodes.TS014.EndDate = ts013EndDate.toISOString();
+        }
+      }
+    });
+
+    this.dataList = res.data;
+
+    if (this.dataList.length > 0) {
+      let selected = null;
+      if (this.currentProject) {
+        selected = this.dataList.find(project => project.ProjectId === this.currentProject.ProjectId);
+      }
+      if (!selected) {
+        selected = this.dataList[0];
+      }
+      this.$refs.table.setCurrentRow(selected);
+      this.$emit('current-change', selected);
+    }
+  }).finally(() => {
+    this.loading = false;
+    console.log('After loading data:', this.model.PlanNodes.TS014.EndDate);
+  });
+},
+// 假设你在获取数据后进行处理
+// 例如，假设 responseData 是从数据库中获取的数据
+let responseData = /* 从数据库中获取的数据 */;
+
+// 使用 Optional Chaining 来检查属性是否存在
+model.PlanNodes.TS014.EndDate = responseData?.PlanNodes?.TS014?.EndDate || '默认值';
+<a-form-model-item label="入炉完成" prop="PlanNodes.TS014.EndDate">
+    <a-date-picker
+        v-if="model.PlanNodes.TS014?.EndDate"
+        v-model="model.PlanNodes.TS014.EndDate"
+        :allowClear="false"
+    />
+    <a-date-picker
+        v-else
+        :default-value="new Date().toISOString().split('T')[0]"
+        v-model="model.PlanNodes.TS014.EndDate"
+        :allowClear="false"
+        type="date"
+    />
+</a-form-model-item>
